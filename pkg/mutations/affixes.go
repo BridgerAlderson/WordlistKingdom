@@ -25,6 +25,18 @@ var commonSuffixes = []string{
 	"0", "01", "99", "00",
 }
 
+var universalSeasons = []string{
+	"Summer", "Winter", "Spring", "Autumn",
+	"Yaz", "Kis", "Ilkbahar", "Sonbahar",
+}
+
+var universalMonths = []string{
+	"January", "February", "March", "April", "May", "June",
+	"July", "August", "September", "October", "November", "December",
+	"Ocak", "Subat", "Mart", "Nisan", "Mayis", "Haziran",
+	"Temmuz", "Agustos", "Eylul", "Ekim", "Kasim", "Aralik",
+}
+
 func sendAffixVariants(kw string, out chan<- string) {
 	for _, p := range commonPrefixes {
 		out <- p + kw

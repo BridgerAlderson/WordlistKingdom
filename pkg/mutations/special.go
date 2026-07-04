@@ -1,17 +1,26 @@
 package mutations
 
+import (
+	"fmt"
+	"time"
+)
+
 var specialSingle = []string{"!", "@", "#", "$", "%", "*", ".", "_", "?", "-"}
 
-var specialComplex = []string{
-	"!.", "!1", "!12", "!123", "!@#",
-	"@123", "123!", "1234", "12345",
-	"2024!", "2025!", "#1",
-}
+var currentYear = time.Now().Year()
 
 func specialVariants(base string) []string {
 	if base == "" {
 		return nil
 	}
+	specialComplex := []string{
+		"!.", "!1", "!12", "!123", "!@#",
+		"@123", "123!", "1234", "12345",
+		fmt.Sprintf("%d!", currentYear),
+		fmt.Sprintf("%d!", currentYear+1),
+		"#1",
+	}
+
 	capacity := len(specialSingle)*2 + len(specialComplex) + len(specialSingle)
 	out := make([]string, 0, capacity)
 

@@ -51,8 +51,6 @@ func (f *Filter) Count() uint64 {
 	return f.count
 }
 
-// EstimatedFP returns the current estimated false-positive rate based on
-// the number of items inserted. Formula: (1 - e^(-k*n/m))^k
 func (f *Filter) EstimatedFP() float64 {
 	f.mu.Lock()
 	n := float64(f.count)

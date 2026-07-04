@@ -1,9 +1,6 @@
 package mutations
 
-import (
-	"fmt"
-	"time"
-)
+import "fmt"
 
 var historicalYears = []int{
 	1071, 1453, 1923,
@@ -18,8 +15,6 @@ func SetExtraYears(years []int) {
 }
 
 func yearVariants(base string) []string {
-	cur := time.Now().Year()
-
 	seen := make(map[int]bool)
 	years := make([]int, 0, 20)
 	add := func(y int) {
@@ -29,7 +24,7 @@ func yearVariants(base string) []string {
 		}
 	}
 
-	for y := cur - 3; y <= cur+1; y++ {
+	for y := currentYear - 3; y <= currentYear+1; y++ {
 		add(y)
 	}
 	for _, y := range historicalYears {
