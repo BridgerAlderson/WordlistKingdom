@@ -1,6 +1,11 @@
 package mutations
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
+
+var currentYear = time.Now().Year()
 
 var historicalYears = []int{
 	1071, 1453, 1923,
