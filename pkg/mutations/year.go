@@ -11,13 +11,33 @@ var historicalYears = []int{
 	2019,
 }
 
+var extraYears []int
+
+func SetExtraYears(years []int) {
+	extraYears = years
+}
+
 func yearVariants(base string) []string {
 	cur := time.Now().Year()
-	years := make([]int, 0, 12)
-	for y := cur - 3; y <= cur+1; y++ {
-		years = append(years, y)
+
+	seen := make(map[int]bool)
+	years := make([]int, 0, 20)
+	add := func(y int) {
+		if !seen[y] {
+			seen[y] = true
+			years = append(years, y)
+		}
 	}
-	years = append(years, historicalYears...)
+
+	for y := cur - 3; y <= cur+1; y++ {
+		add(y)
+	}
+	for _, y := range historicalYears {
+		add(y)
+	}
+	for _, y := range extraYears {
+		add(y)
+	}
 
 	out := make([]string, 0, len(years)*4)
 	for _, y := range years {

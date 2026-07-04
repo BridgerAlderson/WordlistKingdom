@@ -23,7 +23,10 @@ func NewEngine(workers int, bf *bloom.Filter, pf *filter.PolicyFilter, w *writer
 	return &Engine{workers: workers, bloom: bf, filter: pf, writer: w}
 }
 
-func (e *Engine) Run(keywords []string) (int64, error) {
+// Run generates mutations for keywords and usernames.
+// usernames go through single-keyword mutations only — they are never
+// cross-combined with each other, preventing noise from user×user pairs.
+func (e *Engine) Run(keywords []string, usernames []string) (int64, error) {
 	candidates := make(chan string, 100_000)
 
 	var written atomic.Int64
@@ -45,17 +48,22 @@ func (e *Engine) Run(keywords []string) (int64, error) {
 		}()
 	}
 
-	e.generate(keywords, candidates)
+	e.generate(keywords, usernames, candidates)
 	close(candidates)
 
 	wg.Wait()
 	return written.Load(), nil
 }
 
-func (e *Engine) generate(keywords []string, out chan<- string) {
+func (e *Engine) generate(keywords []string, usernames []string, out chan<- string) {
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, e.workers)
-	for _, kw := range keywords {
+
+	allTerms := make([]string, 0, len(keywords)+len(usernames))
+	allTerms = append(allTerms, keywords...)
+	allTerms = append(allTerms, usernames...)
+
+	for _, kw := range allTerms {
 		wg.Add(1)
 		sem <- struct{}{}
 		go func(k string) {

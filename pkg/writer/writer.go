@@ -16,6 +16,11 @@ type Writer struct {
 }
 
 func New(path string) (*Writer, error) {
+	if path == "-" {
+		return &Writer{
+			bw: bufio.NewWriterSize(os.Stdout, 64<<20),
+		}, nil
+	}
 	f, err := os.Create(path)
 	if err != nil {
 		return nil, fmt.Errorf("create %s: %w", path, err)
@@ -41,6 +46,9 @@ func (w *Writer) Close() error {
 	defer w.mu.Unlock()
 	if err := w.bw.Flush(); err != nil {
 		return fmt.Errorf("flush: %w", err)
+	}
+	if w.f == nil {
+		return nil
 	}
 	return w.f.Close()
 }
