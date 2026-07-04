@@ -56,11 +56,9 @@ func (e *Engine) generate(keywords []string, usernames []string, out chan<- stri
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, e.workers)
 
-	allTerms := make([]string, 0, len(keywords)+len(usernames)+len(universalSeasons)+len(universalMonths))
+	allTerms := make([]string, 0, len(keywords)+len(usernames))
 	allTerms = append(allTerms, keywords...)
 	allTerms = append(allTerms, usernames...)
-	allTerms = append(allTerms, universalSeasons...)
-	allTerms = append(allTerms, universalMonths...)
 
 	for _, kw := range allTerms {
 		wg.Add(1)
