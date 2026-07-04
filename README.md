@@ -6,7 +6,7 @@
  ██║ █╗ ██║ █████╔╝
  ██║███╗██║ ██╔═██╗
  ╚███╔███╔╝ ██║  ██╗
-  ╚══╝╚══╝  ╚═╝  ╚═╝   WordlistKingdom v1.0
+  ╚══╝╚══╝  ╚═╝  ╚═╝   WordlistKingdom v1.1
 ```
 
 **Target-Specific Custom Wordlist Generator** — A high-performance, concurrent CLI tool for generating organisation-aware password candidates during authorised penetration tests and red team operations.
@@ -87,11 +87,11 @@ Three injection modes per candidate:
 |------|---------|
 | Suffix (single) | `Admin!` `Admin@` `Admin#` … |
 | Prefix (single) | `!Admin` `@Admin` … |
-| Complex suffix | `Admin!123` `Admin2024!` `Admin!@#` … |
+| Complex suffix | `Admin!123` `Admin!@#` `Admin123!` … |
 | Midpoint infix | `Ad!min` (words ≥ 4 chars) |
 
 Single chars: `! @ # $ % * . _ ? -`  
-Complex tokens: `!.` `!1` `!12` `!123` `!@#` `@123` `123!` `1234` `12345` `2024!` `2025!` `#1`
+Complex tokens: `!.` `!1` `!12` `!123` `!@#` `@123` `123!` `1234` `12345` `#1`
 
 ### 5. Keyword Combinations
 All ordered pairs from the keyword list are cross-combined with five separators, and all case variants of each pair are emitted:
@@ -114,7 +114,28 @@ Industry-standard role and department terms are prepended and appended (with `.`
 
 Example: `Istanbul` → `AdminIstanbul`, `Admin_Istanbul`, `Istanbul123`, `Istanbul_IT`
 
-### 7. Active Directory Policy Filter
+### 7. Season / Month Cross-Combinations
+Universal season and month terms (English + Turkish) are cross-combined with every keyword, then year and special character variants are applied to each combination:
+
+```
+Seasons: Summer Winter Spring Autumn Yaz Kis Ilkbahar Sonbahar
+Months:  January February … December / Ocak Subat … Aralik
+```
+
+Example with keyword `Acme`:  
+`AcmeSummer2024`, `AcmeSummer!`, `WinterAcme2025`, `AcmeOcak!@#`, …
+
+### 8. Username Pivot Mutations
+When a username list is provided via `-userlist`, every username is cross-combined with every keyword across five separators, with full year and special character variants:
+
+```
+Separators: .  _  -  @  (none)
+```
+
+Example with username `jsmith` and keyword `Acme`:  
+`jsmith.Acme2026`, `jsmith_acme!`, `JSMITH@Acme2025`, `JsmithAcme!@#`, …
+
+### 9. Active Directory Policy Filter
 Before any candidate is written to disk, it is validated against the configured AD complexity policy:
 
 - Minimum length (default: **8 characters**)
@@ -122,7 +143,7 @@ Before any candidate is written to disk, it is validated against the configured 
 - At least **1 digit**
 - At least **1 special character**
 
-Candidates that fail the filter are discarded. Disable with `--no-filter` to output all raw mutations.
+Candidates that fail the filter are discarded. Disable with `-no-filter` to output all raw mutations.
 
 ---
 
@@ -133,7 +154,7 @@ Candidates that fail the filter are discarded. Disable with `--no-filter` to out
 Requires [Go 1.21+](https://go.dev/dl/).
 
 ```bash
-git clone https://github.com/yourusername/WordlistKingdom.git
+git clone https://github.com/BridgerAlderson/WordlistKingdom.git
 cd WordlistKingdom
 go build -ldflags="-s -w" -o wordlistkingdom .
 ```
@@ -179,7 +200,9 @@ GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o dist/wordlistkingdom-wind
 | Flag | Default | Description |
 |------|---------|-------------|
 | `-input` | `keywords.txt` | Path to the keywords file |
-| `-output` | `custom_wordlist.txt` | Path to the output wordlist |
+| `-output` | `custom_wordlist.txt` | Path to the output wordlist (use `-` for stdout) |
+| `-userlist` | _(none)_ | Path to username list for pivot mutations (SAMAccountName format) |
+| `-years` | _(none)_ | Extra years to include, comma-separated (e.g. `1938,2010`) |
 | `-workers` | NumCPU | Number of parallel goroutines |
 | `-min-len` | `8` | Minimum password length (AD policy) |
 | `-no-filter` | `false` | Disable AD policy filter — output all mutations |
@@ -211,6 +234,16 @@ GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o dist/wordlistkingdom-wind
 **Custom minimum password length:**
 ```bash
 ./wordlistkingdom -min-len 12 -v
+```
+
+**Username pivot — cross-combine a user list with keywords:**
+```bash
+./wordlistkingdom -input keywords.txt -userlist users.txt -output passwords.txt -v
+```
+
+**Include extra target-specific years (e.g. founding year, known incident year):**
+```bash
+./wordlistkingdom -input keywords.txt -years 1938,2010 -output passwords.txt -v
 ```
 
 **Pipe output directly into crackmapexec (via process substitution):**
