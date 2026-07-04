@@ -1,0 +1,17 @@
+# Compiled binaries
+*.exe
+wordlistkingdom
+dist/
+
+# Generated output files
+*.txt
+!keywords.txt
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp

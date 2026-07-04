@@ -1,0 +1,15 @@
+# WordlistKingdom — Target Keywords File
+# One keyword per line. Lines starting with # are ignored.
+# Edit this file with your target-specific terms before running.
+
+Acme
+Corp
+Network
+Admin
+Istanbul
+Ankara
+Turkey
+IT
+Helpdesk
+Password
+Welcome
