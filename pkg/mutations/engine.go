@@ -71,18 +71,17 @@ func (e *Engine) generate(keywords []string, usernames []string, out chan<- stri
 	}
 	wg.Wait()
 
-	sendCombinations(keywords, out)
-
-	for i, a := range keywords {
-		for j, b := range keywords {
-			if i == j {
-				continue
-			}
-			combo := a + b
-			for _, y := range yearVariants(combo) {
-				out <- y
-			}
-			for _, s := range specialVariants(combo) {
+	for _, combo := range combinations(keywords) {
+		out <- combo
+		years := yearVariants(combo)
+		for _, y := range years {
+			out <- y
+		}
+		for _, s := range specialVariants(combo) {
+			out <- s
+		}
+		for _, y := range years {
+			for _, s := range specialVariants(y) {
 				out <- s
 			}
 		}

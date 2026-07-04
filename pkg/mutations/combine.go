@@ -2,27 +2,27 @@ package mutations
 
 var separators = []string{".", "_", "-", "@", ""}
 
-func sendCombinations(keywords []string, out chan<- string) {
+func combinations(keywords []string) []string {
 	cases := make([][]string, len(keywords))
 	for i, kw := range keywords {
 		cases[i] = caseVariants(kw)
 	}
 
+	var out []string
 	for i, a := range keywords {
 		for j, b := range keywords {
 			if i == j {
 				continue
 			}
 			for _, sep := range separators {
-				out <- a + sep + b
+				out = append(out, a+sep+b)
 				for _, ca := range cases[i] {
 					for _, cb := range cases[j] {
-						if combo := ca + sep + cb; combo != a+sep+b {
-							out <- combo
-						}
+						out = append(out, ca+sep+cb)
 					}
 				}
 			}
 		}
 	}
+	return out
 }
