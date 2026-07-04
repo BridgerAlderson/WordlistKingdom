@@ -17,7 +17,7 @@
 
 ## How It Works
 
-WordlistKingdom reads a plain-text keyword file (`keywords.txt`) containing organisation-specific terms — company name, city, department names, project names, etc. — and applies seven layered mutation rules to produce a deduplicated, policy-filtered wordlist ready to feed into tools like `hydra`, `crackmapexec`, `kerbrute`, or `hashcat`.
+WordlistKingdom reads a plain-text keyword file (`keywords.txt`) containing organisation-specific terms — company name, city, department names, project names, etc. — and applies nine layered mutation rules to produce a deduplicated, policy-filtered wordlist ready to feed into tools like `hydra`, `crackmapexec`, `kerbrute`, or `hashcat`.
 
 ### Pipeline Architecture
 
