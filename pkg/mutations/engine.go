@@ -23,9 +23,6 @@ func NewEngine(workers int, bf *bloom.Filter, pf *filter.PolicyFilter, w *writer
 	return &Engine{workers: workers, bloom: bf, filter: pf, writer: w}
 }
 
-// Run generates mutations for keywords and usernames.
-// usernames go through single-keyword mutations only — they are never
-// cross-combined with each other, preventing noise from user×user pairs.
 func (e *Engine) Run(keywords []string, usernames []string) (int64, error) {
 	candidates := make(chan string, 100_000)
 
@@ -59,9 +56,11 @@ func (e *Engine) generate(keywords []string, usernames []string, out chan<- stri
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, e.workers)
 
-	allTerms := make([]string, 0, len(keywords)+len(usernames))
+	allTerms := make([]string, 0, len(keywords)+len(usernames)+len(universalSeasons)+len(universalMonths))
 	allTerms = append(allTerms, keywords...)
 	allTerms = append(allTerms, usernames...)
+	allTerms = append(allTerms, universalSeasons...)
+	allTerms = append(allTerms, universalMonths...)
 
 	for _, kw := range allTerms {
 		wg.Add(1)
@@ -87,6 +86,47 @@ func (e *Engine) generate(keywords []string, usernames []string, out chan<- stri
 			}
 			for _, s := range specialVariants(combo) {
 				out <- s
+			}
+		}
+	}
+
+	for _, u := range usernames {
+		uCases := caseVariants(u)
+		for _, kw := range keywords {
+			for _, sep := range separators {
+				for _, cu := range uCases {
+					combo := cu + sep + kw
+					out <- combo
+					for _, y := range yearVariants(combo) {
+						out <- y
+					}
+					for _, s := range specialVariants(combo) {
+						out <- s
+					}
+				}
+			}
+		}
+	}
+
+	for _, kw := range keywords {
+		for _, season := range universalSeasons {
+			for _, combo := range []string{kw + season, season + kw} {
+				for _, y := range yearVariants(combo) {
+					out <- y
+				}
+				for _, s := range specialVariants(combo) {
+					out <- s
+				}
+			}
+		}
+		for _, month := range universalMonths {
+			for _, combo := range []string{kw + month, month + kw} {
+				for _, y := range yearVariants(combo) {
+					out <- y
+				}
+				for _, s := range specialVariants(combo) {
+					out <- s
+				}
 			}
 		}
 	}
