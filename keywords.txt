@@ -1,15 +1,34 @@
-# WordlistKingdom — Target Keywords File
-# One keyword per line. Lines starting with # are ignored.
-# Edit this file with your target-specific terms before running.
+# WordlistKingdom — sample target keywords
+#
+# One keyword per line. Empty lines and lines starting with # are ignored.
+# Order matters: only the first -pair-limit keywords (default 25) are
+# cross-combined, so put the strongest target terms first.
+#
+# Multi-word entries are joined automatically ("Acme Corp" -> "AcmeCorp").
+# Turkish characters are supported; use -tr to force Turkish case variants
+# and -ascii to drop non-ASCII output forms.
 
+# Organisation / brand / domain
 Acme
 Corp
 Network
+
+# Roles and departments
 Admin
+
+# Locations
 Istanbul
 Ankara
 Turkey
+
+# Department terms
 IT
 Helpdesk
+
+# Generic corporate password words
 Password
 Welcome
+
+# Add engagement-specific years with:
+#   -years 1923,1974
+# Or product/project names as additional keywords above.

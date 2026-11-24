@@ -1,17 +1,28 @@
-﻿# Compiled binaries
-*.exe
+# Compiled binaries
 wordlistkingdom
+wordlistkingdom.exe
+*.exe
 dist/
+.tmp/
 
-# Generated output
-*.txt
-!keywords.txt
+# Generated wordlists and engagement inputs (never commit these)
+custom_wordlist.txt
+outputs.txt
+wordlist*.txt
+inputs.txt
+users.txt
+people.csv
+userdata.csv
+*.wordlist
+*.rule
 
-# OS
+# Test / coverage artefacts
+coverage.out
+*.test
+
+# OS / editors
 .DS_Store
 Thumbs.db
-
-# IDE
 .vscode/
 .idea/
 *.swp

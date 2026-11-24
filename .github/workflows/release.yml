@@ -1,0 +1,131 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.21.x"
+          cache: true
+
+      - name: Verify formatting
+        run: |
+          files=$(gofmt -l .)
+          if [ -n "$files" ]; then
+            echo "$files"
+            exit 1
+          fi
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test ./...
+
+  windows-smoke:
+    name: windows smoke
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.21.x"
+          cache: true
+
+      - name: Test
+        run: go test ./...
+
+      - name: Build
+        run: go build -trimpath -ldflags "-s -w -X main.version=release-check" -o wordlistkingdom.exe .
+
+      - name: Smoke test
+        shell: pwsh
+        run: |
+          .\wordlistkingdom.exe -version
+          Set-Content -Path keywords.txt -Value "Corp`nAdmin" -Encoding utf8
+          .\wordlistkingdom.exe -L keywords.txt -o out.txt -lvl 0
+          $lines = (Get-Content out.txt | Measure-Object -Line).Lines
+          if ($lines -lt 50) { throw "unexpectedly small wordlist: $lines" }
+
+  build:
+    name: build ${{ matrix.goos }}/${{ matrix.goarch }}
+    needs: [test, windows-smoke]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {goos: linux, goarch: amd64, ext: ""}
+          - {goos: linux, goarch: arm64, ext: ""}
+          - {goos: darwin, goarch: amd64, ext: ""}
+          - {goos: darwin, goarch: arm64, ext: ""}
+          - {goos: windows, goarch: amd64, ext: ".exe"}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.21.x"
+          cache: true
+
+      - name: Build
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          EXT: ${{ matrix.ext }}
+        run: |
+          mkdir -p dist
+          VERSION="${GITHUB_REF_NAME#v}"
+          go build -trimpath -ldflags "-s -w -X main.version=${VERSION}" \
+            -o "dist/wordlistkingdom-${GOOS}-${GOARCH}${EXT}" .
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: wordlistkingdom-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: dist/*
+          if-no-files-found: error
+
+  release:
+    name: publish release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download binaries
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Checksums
+        run: |
+          cd dist
+          sha256sum wordlistkingdom-* > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Publish
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/wordlistkingdom-*
+            dist/SHA256SUMS
+          generate_release_notes: true

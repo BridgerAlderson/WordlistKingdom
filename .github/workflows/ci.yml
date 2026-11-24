@@ -1,0 +1,94 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.21.x"
+          cache: true
+
+      - name: Verify formatting
+        run: |
+          files=$(gofmt -l .)
+          if [ -n "$files" ]; then
+            echo "Unformatted files:"
+            echo "$files"
+            exit 1
+          fi
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test with race detector
+        run: go test -race ./...
+
+      - name: Build
+        run: |
+          mkdir -p dist
+          go build -trimpath -ldflags "-s -w" -o dist/wordlistkingdom .
+
+  fuzz:
+    name: fuzz (short sessions)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.21.x"
+          cache: true
+
+      - name: Fuzz parsers and policy
+        run: make fuzz
+
+  windows:
+    name: windows smoke test
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.21.x"
+          cache: true
+
+      - name: Test
+        run: go test ./...
+
+      - name: Build
+        run: go build -trimpath -ldflags "-s -w -X main.version=ci" -o wordlistkingdom.exe .
+
+      - name: Smoke test
+        shell: pwsh
+        run: |
+          .\wordlistkingdom.exe -version
+          Set-Content -Path keywords.txt -Value "Corp`nAdmin`nCorp.local" -Encoding utf8
+          .\wordlistkingdom.exe -L keywords.txt -o out.txt -lvl 0
+          $lines = (Get-Content out.txt | Measure-Object -Line).Lines
+          if ($lines -lt 100) { throw "unexpectedly small wordlist: $lines" }
+          .\wordlistkingdom.exe -L keywords.txt -o ad.txt -min 8 -ad-policy
+          if (-not (Test-Path ad.txt)) { throw "AD output missing" }
+          Set-Content -Path people.csv -Value "username,first,last,birthyear`njsmith,John,Smith,1990" -Encoding utf8
+          .\wordlistkingdom.exe -L keywords.txt -userdata people.csv -o people.txt
+          if (-not (Select-String -Path people.txt -Pattern "jsmith1990" -SimpleMatch -Quiet)) { throw "userdata pivot missing" }
+          .\wordlistkingdom.exe -L keywords.txt -dates 1990-05-17 -o dates.txt
+          if (-not (Select-String -Path dates.txt -Pattern "Corp17051990" -SimpleMatch -Quiet)) { throw "date pivot missing" }
+          .\wordlistkingdom.exe -h
