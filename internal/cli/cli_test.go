@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestParseLegacyAliases(t *testing.T) {
+func TestParseOldAliases(t *testing.T) {
 	var stderr bytes.Buffer
 	opts, err := Parse([]string{
 		"-L", "in.txt",

@@ -18,6 +18,11 @@ func (g *Generator) buildYears() []int {
 		years = append(years, g.now-2)
 	}
 	years = appendUniqueInt(years, g.cfg.Years...)
+	if g.cfg.Level >= 3 {
+		// The original tool shipped a fixed year list; complete output keeps
+		// those shapes, while focused/standard stay dynamic.
+		years = appendUniqueInt(years, 1971, 1999, 2000, 2001, 2019, 2023, 2024)
+	}
 	for _, d := range g.cfg.Dates {
 		years = appendUniqueInt(years, d.Year)
 	}
@@ -60,6 +65,11 @@ func (g *Generator) extraYearTokens() []string {
 	}
 	for _, d := range g.cfg.Dates {
 		add(d.Year)
+	}
+	if g.cfg.Level >= 3 {
+		for _, y := range []int{1971, 1999, 2000, 2001, 2019, 2023, 2024} {
+			add(y)
+		}
 	}
 	return dedupeStrings(out)
 }
@@ -175,7 +185,7 @@ func (g *Generator) yearSpecialTokens() []string {
 }
 
 // yearSpecialChars are the symbols used in year+symbol shapes. The focused
-// set mirrors the shapes that actually show up in the legacy tool and in
+// set mirrors the shapes that actually show up in the original tool and in
 // breach data: ! * . and ?. The @ shape is covered by separated numbers.
 func (g *Generator) yearSpecialChars() []string {
 	out := []string{"!", "*", ".", "?"}
@@ -219,6 +229,9 @@ func (g *Generator) filterSpecials(in []string) []string {
 // pairNumbers are numeric suffixes applied to two-word combinations.
 func (g *Generator) pairNumbers() []string {
 	out := []string{fmt.Sprintf("%d", g.now), fmt.Sprintf("%02d", g.now%100), fmt.Sprintf("%d", g.now-1), "123"}
+	if g.cfg.Level >= 3 {
+		out = appendUnique(out, g.completeYearTokens()...)
+	}
 	if g.cfg.Level >= 1 {
 		if short, ok := shortYear(g.now - 1); ok {
 			out = appendUnique(out, short)
@@ -233,6 +246,9 @@ func (g *Generator) pairNumbers() []string {
 
 // pairSpecials are symbol suffixes applied to two-word combinations.
 func (g *Generator) pairSpecials() []string {
+	if g.cfg.Level >= 3 {
+		return append([]string(nil), g.specials...)
+	}
 	out := []string{"!", "@"}
 	if g.cfg.Level >= 1 {
 		out = appendUnique(out, "#", ".")

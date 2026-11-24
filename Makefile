@@ -6,7 +6,7 @@
 #   make GO=go1.21 build
 
 SHELL   := /bin/bash
-VERSION ?= 2.0.0
+VERSION ?= 2.2.0
 BINARY  ?= wordlistkingdom
 GO      ?= go
 GOFMT   ?= gofmt

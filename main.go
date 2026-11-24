@@ -13,7 +13,7 @@ import (
 )
 
 // version is overridden at build time with -X main.version=...
-var version = "2.0.0"
+var version = "2.2.0"
 
 func main() {
 	cli.Version = version

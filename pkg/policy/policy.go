@@ -52,12 +52,13 @@ const Count = int(reasonCount)
 
 // Policy is an immutable filter built from a config.
 type Policy struct {
-	minLen     int
-	maxLen     int
-	allowSpace bool
-	asciiOnly  bool
-	ad         bool
-	adMinLen   int
+	minLen          int
+	maxLen          int
+	allowSpace      bool
+	asciiOnly       bool
+	allowLeadingSep bool
+	ad              bool
+	adMinLen        int
 }
 
 // New builds a policy from cfg.
@@ -67,12 +68,13 @@ func New(cfg config.Config) *Policy {
 		maxLen = 128
 	}
 	return &Policy{
-		minLen:     cfg.MinLen,
-		maxLen:     maxLen,
-		allowSpace: cfg.AllowSpace,
-		asciiOnly:  cfg.ASCIIOnly,
-		ad:         cfg.ADPolicy,
-		adMinLen:   cfg.ADMinLen,
+		minLen:          cfg.MinLen,
+		maxLen:          maxLen,
+		allowSpace:      cfg.AllowSpace,
+		asciiOnly:       cfg.ASCIIOnly,
+		allowLeadingSep: cfg.Level >= 3,
+		ad:              cfg.ADPolicy,
+		adMinLen:        cfg.ADMinLen,
 	}
 }
 
@@ -119,7 +121,11 @@ func (p *Policy) Check(s string) Reason {
 		}
 
 		if isSeparator(r) {
-			if first || prevSep {
+			if first {
+				if !p.allowLeadingSep {
+					return Separator
+				}
+			} else if prevSep {
 				return Separator
 			}
 			prevSep = true

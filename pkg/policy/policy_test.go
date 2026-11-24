@@ -106,3 +106,19 @@ func TestReasonStrings(t *testing.T) {
 		t.Fatalf("Count = %d", Count)
 	}
 }
+
+func TestCompleteLeadingSeparator(t *testing.T) {
+	cfg := testCfg()
+	p := New(cfg)
+	if got := p.Check(".Corp"); got != Separator {
+		t.Fatalf("default leading separator = %v", got)
+	}
+	cfg.Level = 3
+	p = New(cfg)
+	if got := p.Check(".Corp"); got != OK {
+		t.Fatalf("complete leading separator = %v", got)
+	}
+	if got := p.Check("..Corp"); got != Separator {
+		t.Fatalf("complete repeated separator = %v", got)
+	}
+}

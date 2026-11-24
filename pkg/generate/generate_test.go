@@ -395,3 +395,38 @@ func TestRichUserData(t *testing.T) {
 		}
 	}
 }
+
+func TestCompleteOutputParity(t *testing.T) {
+	cfg := config.Default()
+	cfg.Level = 3
+	_, set, _ := collect(t, cfg, []string{"corp", "corp.local"}, nil)
+
+	// Representative shapes from the original wordlist_generator.exe output.
+	want := []string{
+		"corp", "Corp", "CORP", "corp.local", "Corp.local", "CORP.LOCAL",
+		"corp2024*", "corp_24", "corp.local2024.", "Corp@24",
+		"CORP.LOCAL24*", "corp.local.2024", "corp.local_99",
+		"corp99!", "corp.local123!",
+		"!Corp", ".Corp", "_Corp", "$Corp", "%01Corp", "*1999Corp",
+		"2001Corp.local%", "!Corp.Corp.local71",
+		"CORPcorp", "corpCORP", "corp.localCORP",
+		"corp.localCorp.local", "Corp.localCorp.local", "CORP.LOCALCORP.LOCAL",
+		"%01Corp.local.Corp", "2019CORP.LOCAL_Corp.",
+		"01Corp-CORP.LOCAL123!", "2000CORPCorp.local-", "23Corp.local-Corp",
+	}
+	for _, w := range want {
+		if !set[w] {
+			t.Errorf("complete output missing %q", w)
+		}
+	}
+}
+
+func TestFocusedHasNoPrefixes(t *testing.T) {
+	cfg := config.Default()
+	_, set, _ := collect(t, cfg, []string{"corp", "corp.local"}, nil)
+	for _, w := range []string{"!Corp", ".Corp", "%01Corp", "*1999Corp"} {
+		if set[w] {
+			t.Errorf("default focused output contains prefix shape %q", w)
+		}
+	}
+}

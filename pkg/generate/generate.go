@@ -32,6 +32,7 @@ const (
 	PhaseAffixes
 	PhaseLeet
 	PhaseSeasons
+	PhaseComplete
 	PhaseDeep
 	PhaseCount
 )
@@ -49,6 +50,7 @@ var phaseNames = [PhaseCount]string{
 	PhaseAffixes:     "role affixes",
 	PhaseLeet:        "leetspeak",
 	PhaseSeasons:     "seasons/months",
+	PhaseComplete:    "complete prefixes",
 	PhaseDeep:        "deep variants",
 }
 
@@ -248,6 +250,13 @@ func (g *Generator) Generate(ctx context.Context, sink EmitFunc) Stats {
 		}
 	}
 
+	if g.cfg.Level >= 3 {
+		g.phaseComplete()
+		if g.stop {
+			return g.stats
+		}
+	}
+
 	if g.cfg.Perm >= 3 || g.cfg.Level >= 3 {
 		g.phaseDeep()
 	}
@@ -355,7 +364,7 @@ func (g *Generator) makeTerm(raw string) (term, bool) {
 	return t, true
 }
 
-// acceptForm applies the legacy class selector. The selector chooses mutation
+// acceptForm applies the class selector. The selector chooses mutation
 // layers, not a strict character whitelist: a Title-case form belongs to the
 // uppercase layer even though it contains lowercase letters.
 func (g *Generator) acceptForm(s string) bool {

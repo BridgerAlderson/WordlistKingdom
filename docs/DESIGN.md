@@ -134,7 +134,7 @@ The generator emits phases in descending likelihood:
 ```
 core → numbers → dates → separated numbers → specials → year+special →
 number+special → word pairs → usernames → role affixes → leet →
-seasons/months → deep variants
+seasons/months → complete prefixes → deep variants
 ```
 
 Within a phase, input keyword order is preserved. A capped or truncated list
@@ -174,7 +174,7 @@ coverage.
 | Separators | `. _ @` for separated numbers; empty / `.` / `_` for pairs |
 | Roles | `Admin Test Dev IT Support Backup Helpdesk Root` at standard |
 | Seasons | 8 English/Turkish terms at extended |
-| Months | 12 English + 12 Turkish at deep |
+| Months | 12 English + 12 Turkish at complete |
 | Dates | Explicit via `-dates`: DDMMYYYY, DDMMYY, YYYYMMDD, YYMMDD, dotted/dashed/slashed, DDMM and MMDD |
 
 Dates are opt-in because a wrong birthday is worse than no birthday. The date's
@@ -200,13 +200,14 @@ The policy layer rejects:
 
 The generator itself avoids:
 
-- prefix symbols (the legacy tool emitted them; `!Corp` is rare, so v2 does not);
-- mid-word symbols on keywords containing `.`, `_` or `-` (deep level only,
+- prefix symbols in the focused/standard profiles (the original tool emitted
+  them; `!Corp` is rare). Level 3 (complete) restores them for output parity;
+- mid-word symbols on keywords containing `.`, `_` or `-` (complete level only,
   plain alphanumeric words);
 - appending digits to a base that already ends in a digit;
 - appending symbols to a base that already ends in a symbol;
-- mixed-case pair products before deep level;
-- full leetspeak before deep level.
+- mixed-case pair products before complete level;
+- full leetspeak before complete level.
 
 ## 3. Levels in detail
 
@@ -215,18 +216,19 @@ Counts from the 11-keyword sample file:
 | Phase | L0 | L1 | L2 | L3 |
 |-------|----:|----:|----:|----:|
 | Core | 33 | 33 | 33 | 33 |
-| Numbers | 330 | 660 | 924 | 1,056 |
-| Separated numbers | 594 | 1,320 | 1,584 | 1,584 |
+| Numbers | 330 | 660 | 924 | 1,320 |
+| Separated numbers | 594 | 1,320 | 1,584 | 3,036 |
 | Specials | 198 | 330 | 429 | 594 |
-| Year+special | 1,056 | 2,376 | 3,696 | 3,696 |
+| Year+special | 1,056 | 2,376 | 3,696 | 8,316 |
 | Number+special | 792 | 1,980 | 3,168 | 3,168 |
-| Pairs | 14,036 | 21,736 | 37,136 | 84,546 |
+| Pairs | 14,036 | 21,736 | 37,136 | 654,896 |
 | Usernames | — | — | — | — |
 | Role affixes | — | 1,360 | 8,304 | 8,304 |
 | Leet | — | 24 | 112 | 280 |
 | Seasons/months | — | — | 704 | 4,224 |
+| Complete prefixes | — | — | — | 25,905 |
 | Deep variants | — | — | — | 190 |
-| **Written** | **16,841** | **28,779** | **53,726** | **105,077** |
+| **Written** | **16,841** | **28,779** | **53,726** | **688,922** |
 
 The counts are attempts before deduplication and policy filtering; the written
 totals are slightly lower (for example 17,039 attempts → 16,841 lines at L0).
@@ -249,7 +251,7 @@ pair:
 - Pair case patterns at focused level: lower+lower, TitleWhole, TitleEach,
   UPPER+UPPER, lower+TitleWhole. Focused uses whole-string title for
   no-separator pairs so it does not create `CorpCorp.Local`.
-- Mixed 3×3 pair casing is deep-level only, where the cost is expected.
+- Mixed 3×3 pair casing is complete-level only, where the cost is expected.
 - Separator-delimited keywords get a PascalCase spelling at standard level
   (`active_directory` → `ActiveDirectory`) and camelCase at extended level
   (`activeDirectory`).
@@ -362,8 +364,8 @@ subset of that grammar. Differences:
 | Old behaviour | v2 behaviour |
 |---------------|--------------|
 | Static years in the binary (2023/2024) | Current year and previous year, dynamically |
-| Full 3×3 pair case product | Five consistent forms at focused; nine at deep |
-| Prefix symbols | Not generated |
+| Full 3×3 pair case product | Five consistent forms at focused; all with `-lvl 3` |
+| Prefix symbols | `-lvl 3` only |
 | Mid-symbol inside domains | Not generated |
 | AD filter absent | Optional, correctly modelled |
 | Nondeterministic order | Deterministic priority order |
@@ -373,6 +375,36 @@ The old `-L`, `-o`, `-lvl`, `-perm`, `-pattern` and `-v` flags are accepted.
 `-lvl` now selects a documented depth preset rather than an opaque internal
 count; `-perm` selects the maximum number of terms. `-min-len` from v1.1 maps
 to the output minimum length.
+
+### 7.1 Complete output at level 3
+
+The original tool's low-probability shapes are not behind a separate flag;
+they are the **complete** level:
+
+```bash
+./wordlistkingdom -L inputs.txt -o complete.txt -lvl 3
+```
+
+Complete output includes:
+
+- prefix symbols and leading separators (`!Corp`, `.Corp`, `_Corp`, `%01Corp`);
+- full mixed-case pair matrix (`CORPcorp`, `corp.localCORP`);
+- domain self-doubling (`corp.localCorp.local`);
+- prefix year/number plus suffix (`2001Corp.local%`,
+  `2019CORP.LOCAL_Corp.`, `01Corp-CORP.LOCAL123!`);
+- historical years 1971, 1999, 2000, 2001, 2019, 2023, 2024.
+
+Pair-prefix expansion is bounded to the base patterns seen in the original
+output; applying every prefix to every mixed base would make complete output
+unusable on large keyword files. Measured with the current generator:
+
+| Input | Focused | Complete (`-lvl 3`) |
+|---|---:|---:|
+| `corp` + `corp.local` | 1,033 | 25,579 |
+| 11-keyword sample | 16,841 | 688,922 |
+
+Complete output is for compatibility/offline coverage. It is not the spray
+default, and `-max-candidates` / `-pair-limit` remain the bounds.
 
 ## 8. Testing strategy
 

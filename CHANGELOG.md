@@ -3,6 +3,38 @@
 All notable changes are recorded here. Versions follow semantic versioning for
 the command-line interface.
 
+## v2.2.0 — 2026-11-24
+
+### Changed
+
+- Complete output now lives at `-lvl 3`; there is no separate output-parity
+  parameter or alias.
+- Level 3 is named **complete** and includes prefix symbols, leading
+  separators, the full mixed-case pair matrix, domain self-doubling, prefix
+  year/number + suffix shapes and the historical years 1971, 1999, 2000, 2001,
+  2019, 2023, 2024.
+- Complete pair-prefix expansion is bounded to the base patterns seen in the
+  original output, keeping the level usable on larger keyword files.
+- Focused, standard and extended output are unchanged.
+
+### Added
+
+- Complete-output parity regression test covering representative original
+  output shapes.
+- App-level complete-output test, including leading-separator policy.
+
+### Removed
+
+- The separate output-parity flag and its alias.
+
+### Notes
+
+- Default focused profile: 1,033 candidates for `corp`/`corp.local` and
+  16,841 for the 11-keyword sample.
+- Complete level: 25,579 candidates for the two-keyword sample and 688,922 for
+  the 11-keyword sample.
+- Use `-max-candidates` or `-pair-limit` to bound complete output.
+
 ## v2.0.0 — 2026-11-24
 
 Complete rewrite of the generator and output pipeline.
@@ -12,7 +44,7 @@ Complete rewrite of the generator and output pipeline.
 - Tiered, priority-ordered candidate generation (core, numbers, separated
   numbers, symbols, year+symbol, number+symbol, pairs, usernames, affixes,
   leetspeak, seasons/months, deep variants).
-- Four depth presets: focused (`0`), standard (`1`), extended (`2`), deep (`3`).
+- Four depth presets: focused (`0`), standard (`1`), extended (`2`), complete (`3`).
 - `-perm 1|2|3` for single terms, pairs and triples.
 - `-userlist` pivots: username case forms, year/number/symbol variants, name
   order variants (`john.smith` → `jsmith`, `smithj`, `johnsmith`) and controlled
@@ -53,8 +85,8 @@ Complete rewrite of the generator and output pipeline.
 - Multi-word keywords are joined (`Acme Corp` → `AcmeCorp`); spaced forms are
   available with `-allow-space`.
 - Candidate order is priority order, and the writer reports errors.
-- Legacy flags `-L`, `-o`, `-lvl`, `-min-len`, `-perm`, `-pattern` and `-v`
-  are accepted. `-min-len` maps to `-min`.
+- Original-tool aliases `-L`, `-o`, `-lvl`, `-min-len`, `-perm`, `-pattern`
+  and `-v` are accepted. `-min-len` maps to `-min`.
 
 ### Removed
 

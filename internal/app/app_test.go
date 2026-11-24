@@ -267,3 +267,28 @@ func TestUserdataRun(t *testing.T) {
 		}
 	}
 }
+
+func TestCompleteRun(t *testing.T) {
+	dir := t.TempDir()
+	input := write(t, dir, "keywords.txt", "corp\ncorp.local\n")
+	output := filepath.Join(dir, "complete.txt")
+	cfg := baseCfg(input, output)
+	cfg.Level = 3
+
+	st, err := Run(context.Background(), cfg, "test", &bytes.Buffer{}, &bytes.Buffer{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if st.Written < 1000 {
+		t.Fatalf("complete output too small: %d", st.Written)
+	}
+	seen := make(map[string]bool)
+	for _, line := range readLines(t, output) {
+		seen[line] = true
+	}
+	for _, want := range []string{".Corp", "_Corp", "!Corp", "%01Corp", "corp.localCorp.local"} {
+		if !seen[want] {
+			t.Errorf("complete app output missing %q", want)
+		}
+	}
+}

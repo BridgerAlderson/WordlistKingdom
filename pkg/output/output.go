@@ -29,7 +29,7 @@ type Writer struct {
 }
 
 // New opens path ("-" means stdout). When echo is non-nil every line is also
-// written there; the CLI uses this for the legacy -v behaviour.
+// written there; the CLI uses this for the -v echo behaviour.
 func New(path string, stdout io.Writer, echo io.Writer) (*Writer, error) {
 	if path == "-" {
 		return &Writer{

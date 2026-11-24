@@ -11,7 +11,7 @@ import (
 	"unicode"
 )
 
-// Pattern is the legacy-compatible character-class selector.
+// Pattern is the compatible character-class selector.
 //
 //	q  lowercase words
 //	@  uppercase / capitalised words
@@ -33,7 +33,7 @@ func AllClasses() Pattern {
 	return Pattern{Lower: true, Upper: true, Digits: true, Special: true}
 }
 
-// ParsePattern parses the four legacy class characters. An empty string means
+// ParsePattern parses the four class characters. An empty string means
 // "all classes". Unknown characters are rejected instead of being ignored so a
 // typo cannot silently shrink the wordlist.
 func ParsePattern(s string) (Pattern, error) {
@@ -108,7 +108,7 @@ type Config struct {
 	Userlist string
 	Userdata string
 
-	Level int // 0 focused, 1 standard, 2 extended, 3 deep
+	Level int // 0 focused, 1 standard, 2 extended, 3 complete
 	Perm  int // maximum terms per candidate: 1, 2 or 3
 
 	Pattern Pattern

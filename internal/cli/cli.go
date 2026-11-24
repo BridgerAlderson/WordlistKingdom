@@ -1,4 +1,4 @@
-// Package cli parses command-line flags, including the legacy flags from the
+// Package cli parses command-line flags, including the aliases from the
 // original wordlist_generator.exe (-L, -o, -lvl, -perm, -pattern, -v).
 package cli
 
@@ -37,7 +37,7 @@ func Parse(args []string, stderr io.Writer) (Options, error) {
 		output   = fs.String("output", cfg.Output, "output file path, or - for stdout")
 		userlist = fs.String("userlist", cfg.Userlist, "username list for account-flavoured candidates")
 		userdata = fs.String("userdata", cfg.Userdata, "CSV with username,first,last,birthyear for name/date pivots")
-		level    = fs.Int("level", cfg.Level, "generation depth: 0 focused, 1 standard, 2 extended, 3 deep")
+		level    = fs.Int("level", cfg.Level, "generation depth: 0 focused, 1 standard, 2 extended, 3 complete")
 		perm     = fs.Int("perm", cfg.Perm, "maximum terms per candidate: 1, 2 or 3")
 		pattern  = fs.String("pattern", "", "class selector: q lower, @ upper, % digits, ! specials")
 		minLen   = fs.Int("min", cfg.MinLen, "minimum candidate length")
@@ -56,7 +56,7 @@ func Parse(args []string, stderr io.Writer) (Options, error) {
 		triple   = fs.Int("triple-limit", cfg.TripleLimit, "keywords eligible for three-word combinations")
 		userKW   = fs.Int("user-keywords", cfg.UserKeywordLimit, "keywords crossed with each username (0 disables)")
 		maxCand  = fs.Int64("max-candidates", cfg.MaxCandidates, "hard output cap (0 = unlimited)")
-		verbose  = fs.Bool("v", cfg.Verbose, "echo every candidate to stdout (legacy behaviour)")
+		verbose  = fs.Bool("v", cfg.Verbose, "echo every candidate to stdout")
 		quiet    = fs.Bool("quiet", cfg.Quiet, "suppress banner and summary")
 		progress = fs.Bool("progress", cfg.Progress, "show a live counter on stderr")
 		version  = fs.Bool("version", false, "print version and exit")
@@ -117,7 +117,7 @@ func Parse(args []string, stderr io.Writer) (Options, error) {
 	}
 	cfg.Exclude = config.ParsePaths(*exclude)
 
-	// The legacy default input was inputs.txt; the project default is
+	// The original default input was inputs.txt; the project default is
 	// keywords.txt. Fall back only when the operator did not choose a path.
 	if !wasSet(fs, "input") && !fileExists(cfg.Input) && fileExists("inputs.txt") {
 		cfg.Input = "inputs.txt"
@@ -137,7 +137,7 @@ var aliases = map[string]string{
 	"min-len": "min",
 }
 
-// normalizeAliases rewrites legacy single-letter/long aliases to canonical
+// normalizeAliases rewrites old single-letter/long aliases to canonical
 // names before flag parsing. Values are never inspected.
 func normalizeAliases(args []string) []string {
 	out := make([]string, 0, len(args))
@@ -205,7 +205,7 @@ Input / output:
   -exclude string       comma-separated wordlists to exclude; gzip is auto-detected
 
 Generation:
-  -level, -lvl int       0 focused (default), 1 standard, 2 extended, 3 deep
+  -level, -lvl int       0 focused (default), 1 standard, 2 extended, 3 complete
   -perm int              maximum terms per candidate: 1, 2 (default) or 3
   -pattern string        q lower, @ upper, % digits, ! specials (default: all)
   -pair-limit int        keywords used for two-word combinations (default 25)
@@ -227,7 +227,7 @@ Output policy:
   -max-candidates int    hard output cap (default 5000000; 0 = unlimited)
 
 Interface:
-  -v                     echo every candidate to stdout (legacy behaviour)
+  -v                     echo every candidate to stdout
   -progress              live counter on stderr
   -quiet                 no banner or summary
   -version               print version
@@ -240,11 +240,11 @@ Levels:
   1 standard   adds role affixes, partial leetspeak, PascalCase spellings
                (ActiveDirectory) and more numeric suffixes.
   2 extended   adds seasons, more symbols, extended roles and camelCase.
-  3 deep       adds prefix years, numeric prefixes, mid-word symbols, months and
-               three-word combinations (also enabled by -perm 3).
+  3 complete   adds prefix years, numeric prefixes, mid-word symbols, months,
+               three-word combinations and the original tool's prefix/mixed/domain shapes.
   All levels are supersets of the previous one.
 
-Legacy flags:
+Original-tool flags:
   -L, -o, -lvl, -min-len, -perm, -pattern, -v are supported. -workers,
   -no-filter and -bloom-size are accepted but ignored (v1.1 compatibility).
 
@@ -257,6 +257,7 @@ Examples:
   wordlistkingdom -L corp.txt -pattern 'q%!' -level 2 -o strict.txt
   wordlistkingdom -L corp.txt -years 1923 -tr -o turkish.txt
   wordlistkingdom -L corp.txt -dates 1990-05-17,2000-01-02 -o dates.txt
+  wordlistkingdom -L inputs.txt -o complete.txt -lvl 3
 `
 }
 

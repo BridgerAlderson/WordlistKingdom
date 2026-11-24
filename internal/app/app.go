@@ -317,7 +317,7 @@ func levelName(level int) string {
 	case 2:
 		return "extended"
 	case 3:
-		return "deep"
+		return "complete"
 	default:
 		return "unknown"
 	}

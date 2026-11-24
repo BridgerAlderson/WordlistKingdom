@@ -24,10 +24,13 @@ func (g *Generator) phasePairs() {
 	year := fmt.Sprintf("%d", g.now)
 
 	// A doubled keyword (corpcorp, Corpcorp, corpCorp) is a real pattern and
-	// was present in the legacy generator. Keep it to alphanumeric terms and
+	// was present in the original generator. Keep it to alphanumeric terms and
 	// only apply the two most common suffixes.
 	for _, t := range g.terms[:limit] {
-		if !textutil.IsAlnumOnly(t.primary) || !hasLetter(t.primary) {
+		if !hasLetter(t.primary) {
+			continue
+		}
+		if g.cfg.Level < 3 && !textutil.IsAlnumOnly(t.primary) {
 			continue
 		}
 		for _, base := range g.pairBases(t.primary, t.primary, "") {
@@ -88,6 +91,11 @@ func (g *Generator) phasePairs() {
 							return
 						}
 					}
+					if g.cfg.Level >= 3 && g.completePairEligible(a, b, sep, base) {
+						if !g.completePairExtras(base) {
+							return
+						}
+					}
 				}
 			}
 		}
@@ -121,8 +129,17 @@ func (g *Generator) pairBases(a, b, sep string) []string {
 		tb := textutil.TitleEach(b)
 		out = append(out, ta+sep+tb)
 		if g.cfg.Level >= 3 {
-			for _, x := range []string{la, ta, ua} {
-				for _, y := range []string{lb, tb, ub} {
+			out = append(out, wa+sep+wb)
+		}
+		if g.cfg.Level >= 3 {
+			xs := []string{la, ta, ua}
+			ys := []string{lb, tb, ub}
+			if g.cfg.Level >= 3 {
+				xs = append(xs, wa)
+				ys = append(ys, wb)
+			}
+			for _, x := range xs {
+				for _, y := range ys {
 					out = append(out, x+sep+y)
 				}
 			}

@@ -6,7 +6,7 @@
  ██║ █╗ ██║ █████╔╝
  ██║███╗██║ ██╔═██╗
  ╚███╔███╔╝ ██║  ██╗
-  ╚══╝╚══╝  ╚═╝  ╚═╝   WordlistKingdom v2.0
+  ╚══╝╚══╝  ╚═╝  ╚═╝   WordlistKingdom v2.2
 ```
 
 Target-specific password candidate generator for penetration tests, red team
@@ -19,9 +19,9 @@ password shapes that real people actually choose — `Corp2026`, `corp2026!`,
 deterministic output and exact deduplication.
 
 For a two-keyword file such as `corp` / `corp.local`, v1.1 produced **161,455**
-lines and dropped the most realistic candidates. v2.0 produces **1,033** useful
+lines and dropped the most realistic candidates. v2.2 produces **1,033** useful
 lines, including the ones v1.1 filtered out. For the sample 11-keyword file,
-v1.1 produced **8.1 million** lines / 140 MB; v2.0 focused produces **16,841**
+v1.1 produced **8.1 million** lines / 140 MB; v2.2 focused produces **16,841**
 lines / 252 KB.
 
 See [docs/DESIGN.md](docs/DESIGN.md) for the measured comparison and the full
@@ -47,7 +47,7 @@ go build -trimpath -ldflags="-s -w" -o wordlistkingdom .
 # Exclude everything already present in rockyou
 ./wordlistkingdom -L keywords.txt -o corp_new.txt -exclude rockyou.txt
 
-# Legacy wordlist_generator.exe invocation
+# Original wordlist_generator.exe invocation
 ./wordlistkingdom -L inputs.txt -o wordlist.txt -v
 ```
 
@@ -128,7 +128,7 @@ wordlistkingdom [flags]
 | `-userlist` | _(none)_ | Username list. `CORP\jsmith` and `jsmith@corp.local` are normalised to `jsmith`. |
 | `-userdata` | _(none)_ | CSV with `username,first,last,birthyear` for full-name and birth-year pivots. Header optional. |
 | `-exclude` | _(none)_ | Comma-separated wordlists whose entries must not appear in the output. Gzip is detected by magic bytes. |
-| `-v` | `false` | Echo every candidate to stdout. Legacy behaviour; combine with a file output. |
+| `-v` | `false` | Echo every candidate to stdout; combine with a file output. |
 | `-progress` | `false` | Live written/elapsed counter on stderr. |
 | `-quiet` | `false` | No banner or summary. |
 | `-version` | `false` | Print the version and exit. |
@@ -137,7 +137,7 @@ wordlistkingdom [flags]
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `-level`, `-lvl` | `0` | Depth preset: `0` focused, `1` standard, `2` extended, `3` deep. |
+| `-level`, `-lvl` | `0` | Depth preset: `0` focused, `1` standard, `2` extended, `3` complete. |
 | `-perm` | `2` | Maximum terms per candidate: `1` singles only, `2` singles + pairs, `3` also triples. |
 | `-pattern` | all | Character-class selector: `q` lower, `@` upper, `%` digits, `!` specials. |
 | `-pair-limit` | `25` | Number of keywords used in two-word combinations. `0` disables pairs. |
@@ -161,7 +161,7 @@ wordlistkingdom [flags]
 | `-allow-space` | `false` | Allow spaces in candidates. Multi-word keywords otherwise become joined forms. |
 | `-max-candidates` | `5000000` | Hard output cap. `0` means unlimited. |
 
-### Legacy compatibility
+### Original-tool compatibility
 
 The original `wordlist_generator.exe` flags are supported:
 
@@ -192,7 +192,7 @@ keywords and the current year.
 | `0` focused | Base words, years/numbers, separated numbers, specials, year+special, number+special, word pairs, doubled words | 16,841 | 252 KB |
 | `1` standard | 8 role affixes (`AdminCorp`, `corp_backup`), partial leetspeak (`a→@`, `o→0`, `i→1`), PascalCase spellings (`CorpLocal`), more numbers/symbols/years | 28,779 | 416 KB |
 | `2` extended | Seasons (English + Turkish), 8 more roles, `.`/`_` affix separators, `-`/`@` pair separators, camelCase spellings, more years and symbols | 53,726 | 782 KB |
-| `3` deep | Months, prefix years (`2026Corp`), numeric prefixes (`123corp`), safe mid-word symbols (`Ad!min`), all leet patterns, mixed-case pair matrix | 105,077 | 1.5 MB |
+| `3` complete | Months, prefix years (`2026Corp`), numeric prefixes (`123corp`), safe mid-word symbols (`Ad!min`), all leet patterns, mixed-case pairs, prefix symbols, domain self-doubling and historical years | 688,922 | 10.9 MB |
 
 Use `-lvl 0` for spraying. Use `-lvl 1` when you have budget for a few more
 attempts. Use `-lvl 2` or `3` for offline cracking where wordlist size is cheap.
@@ -257,11 +257,11 @@ corp + corp.local  ->  corpcorp.local, Corpcorp.local, corpCorp.local,
 ```
 
 At focused level the separator set is empty, `.`, and `_`. Extended level adds
-`-` and `@`. Mixed-case pairs such as `CORPcorp` are deep-level only.
+`-` and `@`. Mixed-case pairs such as `CORPcorp` are complete-level only (`-lvl 3`).
 
 A keyword combined with itself is also generated for alphanumeric terms:
 `corpcorp`, `Corpcorp`, `corpCorp`, `CORPCORP`. This is a real pattern and was
-present in the legacy tool's output.
+present in the original tool's output.
 
 ### Usernames
 
@@ -304,14 +304,46 @@ These are level-gated because they are lower-probability shapes:
 | Prefix years | 3 | `2026corp`, `26corp` |
 | Mid-word symbols | 3 | `Ad!min` (only plain alphanumeric words; domain-shaped keywords are skipped) |
 
-Full leetspeak (`p@$$w0rd`) and the mixed-case pair matrix are deep-level only.
+Full leetspeak (`p@$$w0rd`) and the mixed-case pair matrix are complete-level only.
 
 ---
 
+## Complete output (`-lvl 3`)
+
+The focused profile deliberately omits the low-probability shapes that the
+original `wordlist_generator.exe` emitted. Those shapes are not behind a
+separate compatibility flag: they live in the **complete** level.
+
+```bash
+./wordlistkingdom -L inputs.txt -o complete.txt -lvl 3
+```
+
+Level 3 includes:
+
+- prefix symbols: `!Corp`, `.Corp`, `_Corp`, `$Corp`, `%01Corp`, `*1999Corp`;
+- full 3×3 mixed-case pair matrix: `CORPcorp`, `corpCORP`, `corp.localCORP`;
+- domain self-doubling: `corp.localCorp.local`, `CORP.LOCALCORP.LOCAL`;
+- prefix year/number + suffix shapes: `2001Corp.local%`,
+  `2019CORP.LOCAL_Corp.`, `01Corp-CORP.LOCAL123!`;
+- leading separators, which the focused/standard policy rejects;
+- the historical years `1971`, `1999`, `2000`, `2001`, `2019`, `2023`, `2024`
+  in addition to the dynamic current/previous years;
+- the normal complete-level extras: months, prefix years, mid-word symbols, full
+  leetspeak and mixed-case pairs.
+
+| Input | Default focused | `-lvl 3` complete |
+|---|---:|---:|
+| `corp` + `corp.local` | 1,033 | 25,579 |
+| 11-keyword sample | 16,841 | 688,922 |
+
+Use `-max-candidates` or `-pair-limit` if you need a smaller complete list.
+The focused profile stays the recommended list for spraying; level 3 is for
+compatibility and offline coverage.
+
 ## Pattern selector
 
-`-pattern` controls which mutation layers are generated, using the legacy
-characters:
+`-pattern` controls which mutation layers are generated, using the original
+class characters:
 
 | Char | Layer |
 |------|-------|
@@ -455,7 +487,7 @@ no exclusion list:
 | 0 focused | 16,841 | 252 KB | ~5 ms | ~3.5M/s |
 | 1 standard | 28,779 | 416 KB | ~8 ms | ~3.4M/s |
 | 2 extended | 53,726 | 782 KB | ~15 ms | ~3.6M/s |
-| 3 deep | 105,077 | 1.5 MB | ~26 ms | ~4.0M/s |
+| 3 complete | 688,922 | 10.9 MB | ~355 ms | ~1.9M/s |
 
 Two-keyword run (`corp`, `corp.local`): 1,033 candidates / 13.9 KB in ~1 ms.
 AD-filtered 11-keyword run (`-min 8 -ad-policy`): 12,797 candidates in ~5 ms.
@@ -469,8 +501,8 @@ Exclusion loading is the slow path: a 5M-line synthetic sorted list loads in
 
 ## Compatibility with wordlist_generator.exe
 
-| Capability | Old tool | v2.0 |
-|------------|----------|------|
+| Capability | Old tool | v2.2 default |
+|------------|----------|--------------|
 | Keyword input | `-L` / default `inputs.txt` | `-L` / `-input`; same fallback |
 | Output | `-o` / default `outputs.txt` | `-o` / `-output`; default `custom_wordlist.txt` |
 | Depth | `-lvl` | `-lvl` / `-level` (0–3) |
@@ -483,7 +515,12 @@ Exclusion loading is the slow path: a 5M-line synthetic sorted list loads in
 | Cross-keyword combinations | yes | yes, bounded by `-pair-limit` |
 | Target dates | no | yes (`-dates`) |
 | Doubled words (`Corpcorp`) | yes | yes |
-| Prefix symbols (`!Corp`) | yes | no (intentional: low-probability noise) |
+| Full mixed-case pair matrix (`CORPcorp`, `corp.localCORP`) | yes | `-lvl 3` |
+| Domain self-doubling (`corp.localCorp.local`) | yes | `-lvl 3` |
+| Leading separator shapes (`.Corp`, `_Corp`) | yes | `-lvl 3` |
+| Prefix symbols (`!Corp`) | yes | `-lvl 3` |
+| Prefix year + suffix (`2001Corp.local%`) | yes | `-lvl 3` |
+| Historical years (`1999`…`2024`) | yes, static | `-lvl 3`; otherwise `-years` |
 | Broken mid-word shapes (`corp.loca*l`) | v1.1 only | no |
 | AD policy filter | no | optional (`-ad-policy`) |
 | Exclusion lists | no | yes |
@@ -497,7 +534,7 @@ The old tool's output for `corp` / `corp.local` contained 390 words. v2 focused
 contains 1,033, covering the high-value shapes from the old list with dynamic
 years instead of the hardcoded 2023/2024, plus additional coverage without the
 combinatorial noise. The rare fully mixed pair products (`CORPcorp`,
-`corp.localCORP`) are available at deep level.
+`corp.localCORP`) are available at complete level (`-lvl 3`).
 
 ---
 
@@ -544,7 +581,7 @@ The test suite covers:
 - exact dedup growth and gzip exclusion;
 - reader BOM/CRLF/comments/quotes/usernames;
 - deterministic output, level supersets, permutation gating, patterns, caps;
-- username pivots, deep-level shapes, pair limits, junk-shape regressions;
+- username pivots, complete-level shapes, pair limits, junk-shape regressions;
 - end-to-end runs: exclusion, stdout, caps, cancellation, echo, no-output errors;
 - fuzz targets for date/pattern/special parsing, keyword/userdata readers,
   case forms and policy checks;

@@ -69,7 +69,7 @@ func allDigits(s string) bool {
 }
 
 // phaseSepNumbers emits word+separator+digits shapes such as corp_24,
-// corp.local.2026 and Corp@99. This is the pattern the legacy tool produced
+// corp.local.2026 and Corp@99. This is the pattern the original tool produced
 // heavily, and it is genuinely common in corporate passwords.
 func (g *Generator) phaseSepNumbers() {
 	g.phase = PhaseSepNumbers
